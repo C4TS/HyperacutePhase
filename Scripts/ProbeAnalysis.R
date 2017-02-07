@@ -1,15 +1,20 @@
 library(limma)
 library(sva)
-library(VennDiagram)
 
 targets <- read.table("Targets.txt",sep="\t",header=T,stringsAsFactors=F,check.names=F)
-# class(data)
-# [1] "EList"
-# attr(,"package")
-# [1] "limma"
-# > dim(data)
-# [1] 29385   118
-
+rawdata <- read.ilmn(files="Sample_probe_Profile.txt",ctrlfiles="Control_probe_Profile.txt")
+#Order arrays in targets table as the expression data 
+edata <- rawdata$E
+batch <- targets$Batch
+mod <- model.matrix(~as.factor(Covariate3), data=targets)
+mod0 <- model.matrix(~1,data=targets)
+num.sv(edata,mod,method="leek")
+combat_edata = ComBat(dat=edata, batch=batch,mod=mod,numCovs=NULL, par.prior=TRUE,prior.plots=T)
+rawdata$E <- combat_edata
+bkcor_data<- neqc(rawdata)
+pe <- propexpr(rawdata)
+expressed <- rowSums(bkcor_data$other$Detection < 0.05) >= 3
+data <- bkcor_data[expressed,]
 
 #########################################################################################################
 ################################## Differential expression ##############################################
