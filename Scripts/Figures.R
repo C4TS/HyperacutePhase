@@ -69,13 +69,29 @@ ggplot(df, aes(Time, Expression, fill = Group)) +
 
 
 
-### HEATMAPS ###
-
-# Given a matrix of modules by log fold changes (mat):
+### MODULE HEATMAPS ###
 
 # Load libraries
+library(data.table)
 library(NMF)
 library(RColorBrewer)
+library(dplyr)
+
+# Import, organise data
+res1 <- fread('./Results/MODS_vs_noMODS_0h.Modules.csv') %>%
+  rename(lfc0h = logFC) %>%
+  filter(q.value <= 0.1)
+res2 <- fread('./Results/MODS_vs_noMODS_24h.Modules.csv') %>%
+  rename(lfc24h = logFC)
+res <- fread('./Results/MODS_vs_noMODS_72h.Modules.csv') %>%
+  rename(lfc72h = logFC) %>%
+  inner_join(res1, by = 'Module') %>%
+  inner_join(res2, by = 'Module') %>%
+  select(Module, lfc0h, lfc24h, lfc72h)
+mat <- res %>% 
+  select(-Module) %>% 
+  as.matrix()
+dimnames(mat) <- list(res$Module, c('0h', '24h', '72h'))
 
 # Plot
 rg <- colorRampPalette(c('green', 'black', 'red'))(256)
